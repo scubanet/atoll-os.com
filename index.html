@@ -1,0 +1,2124 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>ATOLL — Tauchschul-Software, gebaut von einem Course Director</title>
+<meta name="description" content="ATOLL ist das Betriebssystem für PADI-Tauchschulen. Gebaut von einem CD, der jeden Tag damit arbeitet." />
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=GT+Sectra:wght@400;500&family=Newsreader:opsz,wght,ital@6..72,400,0;6..72,400,1;6..72,500,0;6..72,500,1;6..72,600,0&family=JetBrains+Mono:wght@400;500;600&family=Caveat:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400..600;1,6..72,400..600&family=JetBrains+Mono:wght@400;500;600&family=Caveat:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    /* The "field manual" palette — warm paper, dive black, one regulator red */
+    --paper: #F1EBDC;          /* aged paper */
+    --paper-2: #E8DFC9;        /* darker fold */
+    --paper-3: #D9CDB1;        /* edge shadow */
+    --ink: #1A1815;            /* near-black, warm */
+    --ink-soft: #3A352D;
+    --ink-mute: #6B6358;
+    --rule: #1A1815;
+    --regulator: #C8351F;      /* PADI-adjacent red — used SPARINGLY */
+    --regulator-dark: #8E2110;
+    --kelp: #4F6B3F;           /* moss/kelp green */
+    --reef: #3D6680;           /* deep water blue */
+    --highlight: #F4D03F;      /* hand-marker yellow */
+
+    --serif: "Newsreader", "GT Sectra", "Times New Roman", serif;
+    --mono: "JetBrains Mono", ui-monospace, "SF Mono", monospace;
+    --hand: "Caveat", cursive;
+
+    --max: 1320px;
+    --gutter: clamp(20px, 4vw, 56px);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--serif);
+    font-size: 17px;
+    line-height: 1.5;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: "ss01";
+    background-image:
+      /* Subtle paper grain */
+      radial-gradient(rgba(26,24,21,0.04) 1px, transparent 1px),
+      radial-gradient(rgba(26,24,21,0.03) 1px, transparent 1px);
+    background-size: 7px 7px, 13px 13px;
+    background-position: 0 0, 3px 5px;
+  }
+
+  /* ===== Typography ===== */
+  .mono { font-family: var(--mono); font-size: 12px; letter-spacing: 0.04em; }
+  .hand { font-family: var(--hand); }
+
+  h1, h2, h3 {
+    font-family: var(--serif);
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    line-height: 1.02;
+  }
+  h1 em, h2 em, h3 em {
+    font-style: italic;
+    font-weight: 500;
+  }
+
+  a { color: inherit; }
+
+  /* ===== Sticky stamp/marker decorations ===== */
+  .stamp {
+    display: inline-block;
+    padding: 4px 10px;
+    border: 1.5px solid currentColor;
+    border-radius: 3px;
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    transform: rotate(-1.5deg);
+  }
+  .stamp.red { color: var(--regulator); border-color: var(--regulator); }
+  .stamp.blue { color: var(--reef); border-color: var(--reef); }
+  .stamp.green { color: var(--kelp); border-color: var(--kelp); }
+  .stamp.solid {
+    background: var(--regulator);
+    color: var(--paper);
+    border-color: var(--regulator);
+  }
+
+  .marker {
+    background: linear-gradient(180deg, transparent 55%, rgba(244, 208, 63, 0.5) 55%, rgba(244, 208, 63, 0.5) 92%, transparent 92%);
+    padding: 0 2px;
+  }
+  .strike { text-decoration: line-through; text-decoration-color: var(--regulator); text-decoration-thickness: 2px; opacity: 0.55; }
+
+  /* ===== Top "logbook header" ===== */
+  .header-strip {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 8px var(--gutter);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    border-bottom: 1px solid var(--regulator);
+  }
+  .header-strip .left { display: flex; gap: 24px; align-items: center; }
+  .header-strip .right { display: flex; gap: 18px; align-items: center; }
+  .pulse-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--kelp);
+    box-shadow: 0 0 0 0 rgba(79, 107, 63, 0.6);
+    animation: pulse 2s infinite;
+    display: inline-block;
+    margin-right: 8px;
+  }
+  @keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(79, 107, 63, 0.6); }
+    70% { box-shadow: 0 0 0 8px rgba(79, 107, 63, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(79, 107, 63, 0); }
+  }
+  .lang-pick {
+    display: inline-flex;
+    background: transparent;
+    border: 1px solid rgba(241, 235, 220, 0.3);
+    border-radius: 0;
+    overflow: hidden;
+  }
+  .lang-pick button {
+    appearance: none; background: none; border: none; color: var(--paper);
+    font: inherit; padding: 4px 10px; cursor: pointer;
+    transition: all .15s;
+    opacity: 0.5;
+  }
+  .lang-pick button.active { background: var(--paper); color: var(--ink); opacity: 1; }
+  .lang-pick button + button { border-left: 1px solid rgba(241, 235, 220, 0.3); }
+
+  /* ===== Nav ===== */
+  nav.main {
+    padding: 18px var(--gutter);
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 24px;
+    border-bottom: 1px solid var(--ink);
+    background: var(--paper);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+  .logo {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    text-decoration: none;
+  }
+  .logo-mark {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: 22px;
+    font-style: italic;
+    border: 1.5px solid var(--ink);
+    width: 30px; height: 30px;
+    display: inline-grid; place-items: center;
+    line-height: 1;
+    transform: translateY(4px);
+  }
+  .logo-name {
+    font-family: var(--mono);
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+  }
+  .logo-sub {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 14px;
+    color: var(--ink-mute);
+  }
+  nav.main .links {
+    display: flex; gap: 28px;
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  nav.main .links a {
+    text-decoration: none;
+    padding-bottom: 2px;
+    border-bottom: 1px solid transparent;
+    transition: border-color .15s;
+  }
+  nav.main .links a:hover { border-bottom-color: var(--ink); }
+  nav.main .cta {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--ink); color: var(--paper);
+    padding: 9px 16px;
+    text-decoration: none;
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    transition: transform .15s, background .15s;
+  }
+  nav.main .cta:hover { background: var(--regulator); }
+  @media (max-width: 880px) { nav.main .links { display: none; } }
+
+  /* ===== HERO ===== */
+  .hero {
+    padding: 60px var(--gutter) 40px;
+    position: relative;
+    border-bottom: 1px solid var(--ink);
+  }
+  .hero-inner { max-width: var(--max); margin: 0 auto; position: relative; }
+
+  .hero-meta-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+    gap: 14px;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    color: var(--ink-mute);
+    text-transform: uppercase;
+  }
+  .hero-meta-row > span::before {
+    content: "·"; margin-right: 14px;
+  }
+  .hero-meta-row > span:first-child::before { content: ""; margin-right: 0; }
+
+  .hero-grid {
+    display: grid;
+    grid-template-columns: 1fr 360px;
+    gap: 60px;
+    align-items: end;
+  }
+  @media (max-width: 980px) {
+    .hero-grid { grid-template-columns: 1fr; gap: 32px; }
+  }
+
+  h1.hero-h {
+    font-size: clamp(54px, 9vw, 142px);
+    line-height: 0.92;
+    margin: 0 0 30px;
+    letter-spacing: -0.035em;
+    font-weight: 400;
+  }
+  h1.hero-h .l1 { display: block; }
+  h1.hero-h .l2 { display: block; margin-left: clamp(20px, 8vw, 120px); }
+  h1.hero-h .l3 {
+    display: block;
+    font-style: italic;
+    color: var(--regulator);
+    font-weight: 500;
+  }
+  h1.hero-h .l3 .small {
+    font-size: 0.55em;
+    font-style: normal;
+    font-weight: 400;
+    color: var(--ink);
+    vertical-align: middle;
+    margin-left: 0.2em;
+  }
+  h1.hero-h .underline {
+    position: relative;
+    display: inline-block;
+  }
+  h1.hero-h .underline::after {
+    content: "";
+    position: absolute;
+    left: -2%; right: -2%;
+    bottom: 0.06em;
+    height: 3px;
+    background: var(--ink);
+    transform: rotate(-0.8deg);
+  }
+
+  /* Hand-written annotation pointing to headline */
+  .hero-annotation {
+    position: absolute;
+    top: clamp(120px, 18vw, 240px);
+    right: clamp(10px, 5vw, 60px);
+    font-family: var(--hand);
+    font-size: clamp(22px, 2.4vw, 32px);
+    color: var(--regulator);
+    transform: rotate(-4deg);
+    max-width: 220px;
+    line-height: 1.05;
+    pointer-events: none;
+  }
+  .hero-annotation svg {
+    position: absolute;
+    left: -50px;
+    bottom: -10px;
+    width: 50px; height: 60px;
+    stroke: var(--regulator);
+    stroke-width: 1.5;
+    fill: none;
+  }
+  @media (max-width: 1100px) { .hero-annotation { display: none; } }
+
+  .hero-right {
+    border: 1.5px solid var(--ink);
+    padding: 24px;
+    background: var(--paper);
+    box-shadow: 4px 4px 0 var(--ink);
+    position: relative;
+  }
+  .hero-right .corner-stamp {
+    position: absolute;
+    top: -14px; right: 14px;
+    background: var(--paper);
+    padding: 0 8px;
+  }
+  .hero-right h4 {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    margin-bottom: 14px;
+  }
+  .hero-right p {
+    font-family: var(--serif);
+    font-size: 17px;
+    line-height: 1.45;
+    margin-bottom: 20px;
+  }
+  .hero-right .sig {
+    font-family: var(--hand);
+    font-size: 26px;
+    margin-bottom: 4px;
+    color: var(--ink);
+  }
+  .hero-right .sig-role {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    color: var(--ink-mute);
+    text-transform: uppercase;
+  }
+
+  .hero-stats {
+    margin-top: 60px;
+    padding-top: 24px;
+    border-top: 1px solid var(--ink);
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
+  }
+  @media (max-width: 700px) {
+    .hero-stats { grid-template-columns: repeat(2, 1fr); }
+  }
+  .hero-stat .n {
+    font-family: var(--serif);
+    font-size: clamp(38px, 4.5vw, 56px);
+    font-weight: 500;
+    line-height: 1;
+    letter-spacing: -0.02em;
+  }
+  .hero-stat .n em { font-style: italic; color: var(--regulator); }
+  .hero-stat .l {
+    margin-top: 6px;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    max-width: 22ch;
+    line-height: 1.4;
+  }
+
+  /* CTA cluster under hero */
+  .hero-cta {
+    margin-top: 36px;
+    display: flex;
+    gap: 18px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 28px;
+    background: var(--ink);
+    color: var(--paper);
+    text-decoration: none;
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    border: 1.5px solid var(--ink);
+    cursor: pointer;
+    font-feature-settings: "ss01";
+    transition: all .15s;
+    position: relative;
+  }
+  .btn:hover { background: var(--regulator); border-color: var(--regulator); }
+  .btn-red { background: var(--regulator); border-color: var(--regulator); }
+  .btn-red:hover { background: var(--regulator-dark); border-color: var(--regulator-dark); }
+  .btn-ghost {
+    background: transparent; color: var(--ink);
+  }
+  .btn-ghost:hover { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .btn-arrow { width: 12px; height: 12px; }
+
+  .btn.shadowed { box-shadow: 4px 4px 0 var(--ink); }
+  .btn.shadowed:hover { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--ink); }
+
+  /* ===== ANTI-PITCH: Wall of "we don't" ===== */
+  .anti {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 70px var(--gutter) 80px;
+    position: relative;
+    overflow: hidden;
+  }
+  .anti::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(to right, rgba(241, 235, 220, 0.04) 1px, transparent 1px);
+    background-size: 100px 100%;
+    pointer-events: none;
+  }
+  .anti-inner {
+    max-width: var(--max);
+    margin: 0 auto;
+    position: relative;
+  }
+  .anti-eyebrow {
+    display: flex;
+    gap: 18px;
+    align-items: center;
+    margin-bottom: 30px;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(241, 235, 220, 0.55);
+  }
+  .anti-eyebrow::before {
+    content: "";
+    display: inline-block;
+    width: 32px;
+    height: 1px;
+    background: var(--regulator);
+  }
+  .anti h2 {
+    font-size: clamp(36px, 5.5vw, 76px);
+    margin-bottom: 50px;
+    max-width: 18ch;
+  }
+  .anti h2 em { font-style: italic; color: var(--paper-3); }
+  .anti-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 36px 40px;
+  }
+  @media (max-width: 900px) { .anti-grid { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 560px) { .anti-grid { grid-template-columns: 1fr; } }
+  .anti-item {
+    border-top: 1px solid rgba(241, 235, 220, 0.15);
+    padding-top: 18px;
+  }
+  .anti-item .no {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    color: var(--regulator);
+    margin-bottom: 12px;
+  }
+  .anti-item h3 {
+    font-size: 22px;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: var(--paper);
+  }
+  .anti-item p {
+    font-size: 14px;
+    line-height: 1.5;
+    color: rgba(241, 235, 220, 0.7);
+  }
+
+  /* ===== "What's in the box" — annotated list, not bento cards ===== */
+  .modules {
+    padding: 90px var(--gutter);
+    border-bottom: 1px solid var(--ink);
+    position: relative;
+  }
+  .modules-head {
+    max-width: var(--max);
+    margin: 0 auto 60px;
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 60px;
+    align-items: end;
+  }
+  @media (max-width: 880px) {
+    .modules-head { grid-template-columns: 1fr; gap: 24px; }
+  }
+  .modules-head h2 {
+    font-size: clamp(40px, 6vw, 88px);
+  }
+  .modules-head .aside {
+    font-family: var(--serif);
+    font-size: 17px;
+    line-height: 1.55;
+    color: var(--ink-soft);
+    border-left: 2px solid var(--regulator);
+    padding-left: 20px;
+  }
+
+  .modules-list {
+    max-width: var(--max);
+    margin: 0 auto;
+    border-top: 2px solid var(--ink);
+  }
+  .module {
+    display: grid;
+    grid-template-columns: 80px 240px 1fr 280px;
+    gap: 30px;
+    align-items: start;
+    padding: 32px 0;
+    border-bottom: 1px solid var(--ink);
+    position: relative;
+    cursor: pointer;
+    transition: background .2s;
+  }
+  .module:hover { background: var(--paper-2); }
+  .module:hover .module-num { transform: translateX(6px); }
+  @media (max-width: 980px) {
+    .module { grid-template-columns: 56px 1fr; }
+    .module .m-desc, .module .m-visual { grid-column: 1 / -1; padding-left: 56px; }
+  }
+  .module-num {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink-mute);
+    padding-top: 4px;
+    transition: transform .2s;
+  }
+  .m-title {
+    font-family: var(--serif);
+    font-size: clamp(28px, 3vw, 44px);
+    font-weight: 500;
+    line-height: 1;
+    letter-spacing: -0.02em;
+  }
+  .m-title em { font-style: italic; color: var(--regulator); }
+  .m-title .sub {
+    display: block;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    color: var(--ink-mute);
+    text-transform: uppercase;
+    margin-top: 8px;
+    font-style: normal;
+  }
+  .m-desc {
+    font-family: var(--serif);
+    font-size: 16px;
+    line-height: 1.55;
+    color: var(--ink-soft);
+    max-width: 50ch;
+  }
+  .m-desc .quote {
+    font-style: italic;
+    color: var(--ink);
+    border-left: 3px solid var(--regulator);
+    padding-left: 14px;
+    margin-top: 14px;
+    font-size: 15px;
+    display: block;
+  }
+  .m-visual {
+    position: relative;
+  }
+
+  /* === Tiny line-illustrations for each module === */
+  .ill {
+    width: 100%;
+    height: 120px;
+    color: var(--ink);
+  }
+  .ill svg { width: 100%; height: 100%; }
+  .ill path, .ill line, .ill circle, .ill rect, .ill polyline {
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 1.5;
+    vector-effect: non-scaling-stroke;
+  }
+  .ill .fill-red { fill: var(--regulator); stroke: var(--regulator); }
+  .ill .fill-kelp { fill: var(--kelp); stroke: var(--kelp); opacity: 0.7; }
+  .ill .fill-ink { fill: var(--ink); stroke: var(--ink); }
+
+  /* ===== Demo screenshot panel (the proof) ===== */
+  .proof {
+    background: var(--paper-2);
+    padding: 90px var(--gutter);
+    border-bottom: 1px solid var(--ink);
+    position: relative;
+  }
+  .proof-inner {
+    max-width: var(--max);
+    margin: 0 auto;
+  }
+  .proof-head {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 40px;
+    align-items: end;
+    margin-bottom: 40px;
+  }
+  @media (max-width: 700px) {
+    .proof-head { grid-template-columns: 1fr; }
+  }
+  .proof-head h2 {
+    font-size: clamp(36px, 5vw, 72px);
+    max-width: 18ch;
+  }
+  .proof-tabs {
+    display: flex;
+    gap: 0;
+    border: 1.5px solid var(--ink);
+    padding: 4px;
+    background: var(--paper);
+    overflow-x: auto;
+    flex-wrap: wrap;
+  }
+  .proof-tab {
+    appearance: none;
+    background: transparent;
+    border: none;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 10px 14px;
+    cursor: pointer;
+    color: var(--ink);
+    transition: all .15s;
+    font-weight: 500;
+  }
+  .proof-tab.active { background: var(--ink); color: var(--paper); }
+  .proof-tab:hover:not(.active) { background: var(--paper-3); }
+
+  .proof-frame {
+    position: relative;
+    border: 1.5px solid var(--ink);
+    background: var(--paper);
+    box-shadow: 8px 8px 0 var(--ink);
+    overflow: hidden;
+    aspect-ratio: 1600 / 866;
+  }
+  .proof-frame img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: top left;
+    display: block;
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity .35s ease-out;
+  }
+  .proof-frame img.active { opacity: 1; }
+
+  /* Annotations on the screenshot */
+  .proof-notes {
+    margin-top: 40px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 36px;
+    border-top: 1px solid var(--ink);
+    padding-top: 30px;
+  }
+  @media (max-width: 800px) { .proof-notes { grid-template-columns: 1fr; gap: 24px; } }
+  .proof-note .arrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    color: var(--regulator);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .proof-note h4 {
+    font-family: var(--serif);
+    font-size: 20px;
+    font-weight: 500;
+    margin-bottom: 8px;
+  }
+  .proof-note p {
+    font-size: 14px;
+    color: var(--ink-soft);
+    line-height: 1.5;
+  }
+
+  /* ===== Comparison table — "before / after" handwritten style ===== */
+  .compare {
+    padding: 90px var(--gutter);
+    border-bottom: 1px solid var(--ink);
+  }
+  .compare-inner { max-width: var(--max); margin: 0 auto; }
+  .compare h2 {
+    font-size: clamp(36px, 5vw, 72px);
+    margin-bottom: 8px;
+    max-width: 22ch;
+  }
+  .compare .sub {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    margin-bottom: 50px;
+  }
+  .compare-table {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    border: 1.5px solid var(--ink);
+  }
+  .compare-col {
+    padding: 30px 32px;
+  }
+  .compare-col.before {
+    background: var(--paper);
+    border-right: 1px solid var(--ink);
+  }
+  .compare-col.after {
+    background: var(--ink);
+    color: var(--paper);
+  }
+  @media (max-width: 760px) {
+    .compare-table { grid-template-columns: 1fr; }
+    .compare-col.before { border-right: none; border-bottom: 1px solid var(--ink); }
+  }
+  .compare-col h3 {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    margin-bottom: 22px;
+  }
+  .compare-col.after h3 { color: rgba(241, 235, 220, 0.5); }
+  .compare-col h3::before {
+    content: "";
+    display: inline-block;
+    width: 24px; height: 1px;
+    background: currentColor;
+    vertical-align: middle;
+    margin-right: 12px;
+  }
+  .compare-col ul {
+    list-style: none;
+  }
+  .compare-col li {
+    font-family: var(--serif);
+    font-size: 17px;
+    line-height: 1.55;
+    padding: 9px 0;
+    border-bottom: 1px dashed var(--rule);
+    position: relative;
+    padding-left: 26px;
+  }
+  .compare-col.before li {
+    color: var(--ink-mute);
+    text-decoration: line-through;
+    text-decoration-color: var(--regulator);
+    text-decoration-thickness: 1.5px;
+  }
+  .compare-col.before li::before {
+    content: "✕";
+    position: absolute;
+    left: 0; top: 9px;
+    color: var(--regulator);
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .compare-col.after li {
+    border-bottom-color: rgba(241, 235, 220, 0.2);
+  }
+  .compare-col.after li::before {
+    content: "→";
+    position: absolute;
+    left: 0; top: 9px;
+    color: var(--paper-3);
+    font-family: var(--mono);
+    font-weight: 500;
+  }
+  .compare-col li:last-child { border-bottom: none; }
+  .compare-col li em { font-style: italic; font-weight: 500; }
+
+  /* ===== STORY / "Built by" section ===== */
+  .story {
+    padding: 100px var(--gutter);
+    background: var(--paper);
+    border-bottom: 1px solid var(--ink);
+    position: relative;
+  }
+  .story-inner {
+    max-width: var(--max);
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr 1.3fr;
+    gap: 80px;
+    align-items: start;
+  }
+  @media (max-width: 980px) {
+    .story-inner { grid-template-columns: 1fr; gap: 40px; }
+  }
+  .story-portrait {
+    border: 1.5px solid var(--ink);
+    background: var(--paper-2);
+    padding: 30px;
+    box-shadow: 6px 6px 0 var(--ink);
+    position: relative;
+  }
+  .story-portrait::before {
+    content: "DW";
+    font-family: var(--serif);
+    font-style: italic;
+    font-weight: 500;
+    font-size: 240px;
+    line-height: 0.85;
+    color: var(--ink);
+    display: block;
+    text-align: center;
+    letter-spacing: -0.06em;
+  }
+  .story-portrait .credit {
+    text-align: center;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--ink);
+  }
+  .story-portrait .credit .name {
+    font-family: var(--serif);
+    font-size: 22px;
+    font-weight: 500;
+    font-style: italic;
+  }
+  .story-portrait .credit .role {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    margin-top: 6px;
+  }
+  .story-content h2 {
+    font-size: clamp(32px, 4.5vw, 56px);
+    margin-bottom: 30px;
+    max-width: 18ch;
+  }
+  .story-content h2 em {
+    font-style: italic;
+    color: var(--regulator);
+  }
+  .story-content p {
+    font-size: 17px;
+    line-height: 1.65;
+    margin-bottom: 18px;
+    color: var(--ink-soft);
+    max-width: 56ch;
+  }
+  .story-content p:first-of-type::first-letter {
+    font-family: var(--serif);
+    font-size: 76px;
+    font-weight: 500;
+    line-height: 0.85;
+    float: left;
+    margin: 6px 12px 0 0;
+    color: var(--regulator);
+  }
+  .story-credentials {
+    margin-top: 30px;
+    padding-top: 24px;
+    border-top: 1px solid var(--ink);
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+  }
+  .story-cred {
+    border-left: 2px solid var(--regulator);
+    padding-left: 14px;
+  }
+  .story-cred .l {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.16em;
+    color: var(--ink-mute);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .story-cred .v {
+    font-family: var(--serif);
+    font-size: 17px;
+    font-weight: 500;
+  }
+
+  /* ===== Quote panel ===== */
+  .testimonial {
+    padding: 100px var(--gutter);
+    background: var(--paper-2);
+    border-bottom: 1px solid var(--ink);
+  }
+  .testimonial-inner {
+    max-width: 900px;
+    margin: 0 auto;
+    text-align: center;
+    position: relative;
+  }
+  .testimonial-mark {
+    font-family: var(--serif);
+    font-size: 200px;
+    line-height: 0.5;
+    color: var(--regulator);
+    font-style: italic;
+    margin-bottom: -40px;
+  }
+  .testimonial blockquote {
+    font-family: var(--serif);
+    font-size: clamp(24px, 3.4vw, 42px);
+    font-weight: 400;
+    font-style: italic;
+    line-height: 1.25;
+    letter-spacing: -0.015em;
+    margin-bottom: 32px;
+  }
+  .testimonial blockquote .marker { background: linear-gradient(180deg, transparent 60%, rgba(244, 208, 63, 0.55) 60%, rgba(244, 208, 63, 0.55) 90%, transparent 90%); }
+  .testimonial-cite {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+  }
+  .testimonial-cite strong {
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  /* ===== Pricing — "Single ticket" style ===== */
+  .pricing-sec {
+    padding: 100px var(--gutter);
+    border-bottom: 1px solid var(--ink);
+  }
+  .pricing-inner { max-width: var(--max); margin: 0 auto; }
+  .pricing-head {
+    text-align: center;
+    margin-bottom: 50px;
+  }
+  .pricing-head h2 {
+    font-size: clamp(40px, 5.5vw, 76px);
+  }
+  .pricing-head .sub {
+    margin-top: 16px;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+  }
+
+  .ticket {
+    max-width: 720px;
+    margin: 0 auto;
+    background: var(--paper);
+    border: 1.5px solid var(--ink);
+    box-shadow: 10px 10px 0 var(--ink);
+    display: grid;
+    grid-template-columns: 1fr 200px;
+    overflow: hidden;
+    position: relative;
+  }
+  .ticket::before {
+    /* perforation */
+    content: "";
+    position: absolute;
+    top: 0; bottom: 0;
+    left: calc(100% - 200px);
+    width: 0;
+    border-left: 1.5px dashed var(--ink);
+  }
+  @media (max-width: 700px) {
+    .ticket { grid-template-columns: 1fr; }
+    .ticket::before { left: 0; right: 0; top: calc(100% - 180px); width: auto; height: 0; border-left: none; border-top: 1.5px dashed var(--ink); }
+  }
+  .ticket-main {
+    padding: 36px 38px;
+  }
+  .ticket-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    color: var(--regulator);
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+  .ticket-title {
+    font-family: var(--serif);
+    font-size: 42px;
+    font-weight: 500;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    margin-bottom: 6px;
+  }
+  .ticket-title em { font-style: italic; color: var(--regulator); }
+  .ticket-tag {
+    font-family: var(--serif);
+    font-style: italic;
+    color: var(--ink-mute);
+    margin-bottom: 26px;
+  }
+  .ticket-list {
+    list-style: none;
+    columns: 1;
+  }
+  .ticket-list li {
+    padding: 8px 0;
+    font-size: 15px;
+    border-bottom: 1px dotted var(--ink);
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+  .ticket-list li::before {
+    content: "✓";
+    color: var(--kelp);
+    font-family: var(--mono);
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .ticket-list li:last-child { border-bottom: none; }
+
+  .ticket-stub {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 30px 24px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    text-align: center;
+  }
+  .ticket-stub .small {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--paper-3);
+  }
+  .ticket-stub .amount {
+    font-family: var(--serif);
+    font-size: 64px;
+    font-weight: 500;
+    line-height: 1;
+    margin: 16px 0 4px;
+    letter-spacing: -0.03em;
+  }
+  .ticket-stub .per {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    color: var(--paper-3);
+    text-transform: uppercase;
+    margin-bottom: 24px;
+  }
+  .ticket-stub .btn {
+    width: 100%;
+    justify-content: center;
+    background: var(--regulator);
+    border-color: var(--regulator);
+    color: var(--paper);
+    padding: 14px;
+  }
+  .ticket-stub .btn:hover { background: var(--paper); color: var(--ink); border-color: var(--paper); }
+  .ticket-stub .stub-id {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    color: var(--paper-3);
+    margin-top: 20px;
+  }
+  .pricing-fine {
+    text-align: center;
+    margin-top: 24px;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    color: var(--ink-mute);
+    text-transform: uppercase;
+  }
+
+  /* ===== FAQ ===== */
+  .faq {
+    padding: 90px var(--gutter);
+    border-bottom: 1px solid var(--ink);
+  }
+  .faq-inner { max-width: var(--max); margin: 0 auto; }
+  .faq h2 {
+    font-size: clamp(36px, 5vw, 64px);
+    margin-bottom: 50px;
+    max-width: 18ch;
+  }
+  .faq-list {
+    border-top: 1.5px solid var(--ink);
+  }
+  details {
+    border-bottom: 1px solid var(--ink);
+    padding: 24px 0;
+    cursor: pointer;
+  }
+  details summary {
+    list-style: none;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 24px;
+    align-items: center;
+    font-family: var(--serif);
+    font-size: clamp(20px, 2vw, 26px);
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+  details summary::-webkit-details-marker { display: none; }
+  details summary::after {
+    content: "+";
+    font-family: var(--mono);
+    font-weight: 400;
+    font-size: 24px;
+    transition: transform .25s;
+    color: var(--regulator);
+  }
+  details[open] summary::after { transform: rotate(45deg); }
+  details .answer {
+    font-family: var(--serif);
+    font-size: 17px;
+    line-height: 1.65;
+    color: var(--ink-soft);
+    margin-top: 18px;
+    max-width: 70ch;
+  }
+
+  /* ===== Demo / contact section ===== */
+  .demo {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 100px var(--gutter);
+    position: relative;
+    overflow: hidden;
+  }
+  .demo::before {
+    content: "ATOLL";
+    position: absolute;
+    bottom: -60px;
+    right: -20px;
+    font-family: var(--serif);
+    font-style: italic;
+    font-weight: 500;
+    font-size: clamp(180px, 32vw, 460px);
+    line-height: 0.8;
+    color: rgba(241, 235, 220, 0.04);
+    letter-spacing: -0.05em;
+    pointer-events: none;
+  }
+  .demo-inner {
+    max-width: var(--max);
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+    gap: 70px;
+    position: relative;
+  }
+  @media (max-width: 900px) {
+    .demo-inner { grid-template-columns: 1fr; gap: 40px; }
+  }
+  .demo h2 {
+    font-size: clamp(40px, 6vw, 88px);
+    margin-bottom: 24px;
+  }
+  .demo h2 em { font-style: italic; color: var(--regulator); }
+  .demo p.lead {
+    font-size: 18px;
+    line-height: 1.55;
+    color: rgba(241, 235, 220, 0.75);
+    margin-bottom: 30px;
+    max-width: 48ch;
+  }
+  .demo-extras {
+    padding-top: 30px;
+    border-top: 1px solid rgba(241, 235, 220, 0.15);
+  }
+  .demo-extras .row {
+    padding: 12px 0;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-size: 15px;
+  }
+  .demo-extras .row svg {
+    width: 18px; height: 18px;
+    flex-shrink: 0;
+    stroke: var(--regulator);
+  }
+
+  .form {
+    background: var(--paper);
+    color: var(--ink);
+    padding: 36px;
+    border: 1.5px solid var(--paper);
+    box-shadow: 8px 8px 0 var(--regulator);
+  }
+  .form-label {
+    display: block;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    margin: 18px 0 6px;
+  }
+  .form-label:first-child { margin-top: 0; }
+  .form input, .form select, .form textarea {
+    width: 100%;
+    appearance: none;
+    background: transparent;
+    border: none;
+    border-bottom: 1.5px solid var(--ink);
+    padding: 10px 0;
+    font-family: var(--serif);
+    font-size: 17px;
+    color: var(--ink);
+    transition: border-color .15s;
+  }
+  .form input:focus, .form select:focus, .form textarea:focus {
+    outline: none;
+    border-bottom-color: var(--regulator);
+  }
+  .form textarea { resize: vertical; min-height: 60px; }
+  .form .btn {
+    margin-top: 26px;
+    width: 100%;
+    justify-content: center;
+    background: var(--regulator);
+    border-color: var(--regulator);
+    color: var(--paper);
+  }
+  .form .btn:hover { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+  .form-fine {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    margin-top: 12px;
+    text-align: center;
+  }
+
+  /* ===== Footer ===== */
+  footer {
+    background: var(--paper);
+    padding: 50px var(--gutter) 30px;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    color: var(--ink-mute);
+  }
+  .footer-inner {
+    max-width: var(--max);
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 30px;
+    padding-bottom: 30px;
+    border-bottom: 1px solid var(--ink);
+  }
+  .footer-end {
+    max-width: var(--max);
+    margin: 30px auto 0;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 14px;
+    text-transform: uppercase;
+  }
+  footer a {
+    color: var(--ink);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: border-color .15s;
+  }
+  footer a:hover { border-bottom-color: var(--ink); }
+  .footer-links {
+    display: flex;
+    gap: 24px;
+    text-transform: uppercase;
+  }
+
+  /* Lang switching — default: de */
+  [data-en] { display: none !important; }
+  [data-de] { display: revert; }
+  html[lang="en"] [data-de] { display: none !important; }
+  html[lang="en"] [data-en] { display: revert !important; }
+
+  /* Reveal */
+  .reveal {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity .9s cubic-bezier(.2,.7,.2,1), transform .9s cubic-bezier(.2,.7,.2,1);
+  }
+  .reveal.in { opacity: 1; transform: translateY(0); }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Logbook top strip -->
+<div class="header-strip">
+  <div class="left">
+    <span><span class="pulse-dot"></span><span data-de>Live · TSK Zürich</span><span data-en>Live · TSK Zürich</span></span>
+    <span data-de>21. Mai 2026 · KW 21</span>
+    <span data-en>21 May 2026 · Week 21</span>
+  </div>
+  <div class="right">
+    <span data-de>v2026.05 · Beta</span><span data-en>v2026.05 · Beta</span>
+    <div class="lang-pick" role="group">
+      <button data-lang-set="de" class="active">DE</button>
+      <button data-lang-set="en">EN</button>
+    </div>
+  </div>
+</div>
+
+<!-- Main nav -->
+<nav class="main">
+  <a class="logo" href="#">
+    <span class="logo-mark">A</span>
+    <span class="logo-name">ATOLL</span>
+    <span class="logo-sub" data-de>· das Scuba-Betriebssystem</span><span class="logo-sub" data-en>· the scuba operating system</span>
+  </a>
+  <div class="links">
+    <a href="#modules" data-de>Module</a><a href="#modules" data-en>Modules</a>
+    <a href="#proof" data-de>Live-Tour</a><a href="#proof" data-en>Live tour</a>
+    <a href="#story" data-de>Story</a><a href="#story" data-en>Story</a>
+    <a href="#pricing" data-de>Preis</a><a href="#pricing" data-en>Price</a>
+    <a href="#faq">FAQ</a>
+  </div>
+  <a class="cta" href="#demo">
+    <span data-de>Demo →</span><span data-en>Demo →</span>
+  </a>
+</nav>
+
+<!-- ===== HERO ===== -->
+<section class="hero">
+  <div class="hero-inner">
+    <div class="hero-meta-row">
+      <span>Field manual № 01</span>
+      <span data-de>Für PADI-Tauchschulen</span><span data-en>For PADI dive shops</span>
+      <span data-de>Aus 35 Jahren als PADI Pro</span><span data-en>From 35 years as a PADI Pro</span>
+      <span>73 / 136 / 34</span>
+    </div>
+
+    <div class="hero-grid">
+      <div>
+        <h1 class="hero-h">
+          <span class="l1" data-de>Tauchschulen</span><span class="l1" data-en>Dive shops run</span>
+          <span class="l2" data-de>laufen nicht <span class="underline">auf Excel</span>.</span><span class="l2" data-en>don't run on <span class="underline">Excel</span>.</span>
+          <span class="l3" data-de>Sie laufen <em>auf Atoll.</em></span><span class="l3" data-en>They run <em>on Atoll.</em></span>
+        </h1>
+
+        <div class="hero-cta">
+          <a href="#demo" class="btn btn-red shadowed">
+            <span data-de>30-Min-Demo buchen</span><span data-en>Book a 30-min demo</span>
+            <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+          </a>
+          <a href="#proof" class="btn btn-ghost">
+            <span data-de>Live-Tour ansehen</span><span data-en>See the live tour</span>
+          </a>
+        </div>
+      </div>
+
+      <aside class="hero-right">
+        <span class="corner-stamp stamp red">Letter from the builder</span>
+        <h4 data-de>Eine kurze Notiz</h4><h4 data-en>A short note</h4>
+        <p data-de>Ich bin Dominik. Tauche seit 40 Jahren, PADI Pro seit 35, Course Director seit 2026. Ich habe Atoll gebaut, weil ich in jeder Schule, in der ich war, denselben Mix aus Excel, Doodle und Klemmbrettern gesehen habe — und keine Software auf dem Markt verstand, wie eine Tauchschule wirklich läuft. Heute läuft Atoll live bei TSK Zürich.</p>
+        <p data-en>I'm Dominik. Diving for 40 years, PADI Pro for 35, Course Director since 2026. I built Atoll because every shop I worked in ran on the same mix of Excel, Doodle and clipboards — and no software on the market understood how a dive shop actually runs. Today it's live at TSK Zürich.</p>
+        <div class="sig">Dominik W.</div>
+        <div class="sig-role" data-de>PADI Course Director</div>
+        <div class="sig-role" data-en>PADI Course Director</div>
+      </aside>
+    </div>
+
+    <div class="hero-annotation">
+      <svg viewBox="0 0 50 60" preserveAspectRatio="none">
+        <path d="M 45 5 Q 30 20, 20 40 L 25 35 M 20 40 L 15 30" stroke-linecap="round"/>
+      </svg>
+      <span data-de>← genau das, ja</span><span data-en>← yep, that</span>
+    </div>
+
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <div class="n"><em>11</em></div>
+        <div class="l" data-de>Module</div><div class="l" data-en>Modules</div>
+      </div>
+      <div class="hero-stat">
+        <div class="n">73</div>
+        <div class="l" data-de>aktive Nutzer:innen pro Tag</div><div class="l" data-en>active users / day</div>
+      </div>
+      <div class="hero-stat">
+        <div class="n">136</div>
+        <div class="l" data-de>Kurse / Jahr verwaltet</div><div class="l" data-en>courses / year managed</div>
+      </div>
+      <div class="hero-stat">
+        <div class="n"><em>0</em></div>
+        <div class="l" data-de>Excel-Tabellen noch im Umlauf</div><div class="l" data-en>spreadsheets still in circulation</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== ANTI-pitch ===== -->
+<section class="anti">
+  <div class="anti-inner">
+    <div class="anti-eyebrow"><span data-de>02 · Ehrlichkeit zuerst</span><span data-en>02 · Honesty first</span></div>
+    <h2 data-de>Was Atoll <em>nicht</em> ist.</h2>
+    <h2 data-en>What Atoll <em>isn't</em>.</h2>
+
+    <div class="anti-grid">
+      <div class="anti-item">
+        <span class="no" data-de>NICHT 01</span><span class="no" data-en>NOT 01</span>
+        <h3 data-de>Eine Buchhaltungssoftware</h3>
+        <h3 data-en>An accounting tool</h3>
+        <p data-de>Wir kümmern uns um Schüler, Kurse, Crew, Pool. Bexio macht deine Buchhaltung weiterhin besser als wir. Versprochen.</p>
+        <p data-en>We handle students, courses, crew, pool. Bexio still does your accounting better than we ever will. Promise.</p>
+      </div>
+      <div class="anti-item">
+        <span class="no" data-de>NICHT 02</span><span class="no" data-en>NOT 02</span>
+        <h3 data-de>Ein PADI-Ersatz</h3>
+        <h3 data-en>A PADI replacement</h3>
+        <p data-de>Brevets werden weiterhin bei PADI gemeldet. Atoll macht alles drumherum — und gibt dir den Workflow zum schnellen Melden.</p>
+        <p data-en>Certifications still go to PADI. Atoll handles everything around them — and gives you the workflow to submit fast.</p>
+      </div>
+      <div class="anti-item">
+        <span class="no" data-de>NICHT 03</span><span class="no" data-en>NOT 03</span>
+        <h3 data-de>Ein Konkurrent von DiveAssure / IDive</h3>
+        <h3 data-en>A competitor to DiveAssure / IDive</h3>
+        <p data-de>Die machen Versicherung & Reiseverwaltung. Wir machen den Betrieb deiner Schule. Andere Liga, anderes Feld.</p>
+        <p data-en>They do insurance & travel. We run your shop's operations. Different league, different game.</p>
+      </div>
+      <div class="anti-item">
+        <span class="no" data-de>NICHT 04</span><span class="no" data-en>NOT 04</span>
+        <h3 data-de>Eine generische All-in-One-SaaS</h3>
+        <h3 data-en>A generic all-in-one SaaS</h3>
+        <p data-de>Jedes Feld in Atoll existiert, weil ein PADI-Pro es um 22 Uhr gebraucht hat. Keine Mietwagen-Module. Kein CRM-Theater.</p>
+        <p data-en>Every field in Atoll exists because a PADI pro needed it at 10pm. No car rental modules. No CRM theatrics.</p>
+      </div>
+      <div class="anti-item">
+        <span class="no" data-de>NICHT 05</span><span class="no" data-en>NOT 05</span>
+        <h3 data-de>Für jede Schule geeignet</h3>
+        <h3 data-en>For every dive shop</h3>
+        <p data-de>Wenn du nur 10 Kurse im Jahr machst, lohnt es nicht. Wenn du ein Großhotel mit Tauchbasis bist, brauchst du was anderes. Wir sind für die Schulen dazwischen.</p>
+        <p data-en>If you only run 10 courses a year, don't bother. If you're a resort with a dive desk, you need something else. We're for the shops in between.</p>
+      </div>
+      <div class="anti-item">
+        <span class="no" data-de>NICHT 06</span><span class="no" data-en>NOT 06</span>
+        <h3 data-de>"Künstlich intelligent"</h3>
+        <h3 data-en>"AI-powered"</h3>
+        <p data-de>Kein Chatbot, kein Co-Pilot, keine Sprachsuche. Nur ein verdammt gutes Werkzeug, das funktioniert, wenn du es brauchst.</p>
+        <p data-en>No chatbot, no copilot, no voice search. Just a damn good tool that works when you need it.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== MODULES ===== -->
+<section class="modules" id="modules">
+  <div class="modules-head">
+    <h2 data-de>Elf Module. Ein System. <em>Null Doppel&shy;erfassung.</em></h2>
+    <h2 data-en>Eleven modules. One system. <em>Zero double entry.</em></h2>
+    <div class="aside" data-de>Atoll ersetzt nicht ein Tool — sondern den Stapel aus Excel, Doodle, WhatsApp, drei Klemmbrettern und der einen Mappe, die niemand mehr findet. Hier ist, was du dafür bekommst.</div>
+    <div class="aside" data-en>Atoll doesn't replace one tool — it replaces the stack of Excel, Doodle, WhatsApp, three clipboards, and the one binder no one can find. Here's what you get instead.</div>
+  </div>
+
+  <div class="modules-list">
+
+    <a class="module" href="#proof">
+      <div class="module-num">01</div>
+      <div class="m-title">Cockpit<span class="sub" data-de>· Zahlen, die zählen</span><span class="sub" data-en>· Numbers that matter</span></div>
+      <div class="m-desc">
+        <span data-de>Umsatz, aktive Kurse, Top-Crew, ausstehende Aufgaben. Monat, Quartal, YTD — ein Tap. Keine Reports, keine Exports. Du öffnest die App, du weißt, wie's läuft.</span>
+        <span data-en>Revenue, active courses, top crew, pending tasks. Month, quarter, YTD — one tap. No reports, no exports. You open the app, you know how things stand.</span>
+        <span class="quote" data-de>"Erste Software, die ich Sonntagabend nicht öffnen muss, um zu wissen, wie der Monat lief."</span>
+        <span class="quote" data-en>"First software I don't have to open Sunday night to know how the month went."</span>
+      </div>
+      <div class="m-visual">
+        <div class="ill">
+          <svg viewBox="0 0 280 120" preserveAspectRatio="xMidYMid meet">
+            <rect x="0" y="0" width="280" height="120" stroke-dasharray="2 4" opacity="0.3"/>
+            <line x1="0" y1="100" x2="280" y2="100"/>
+            <rect x="20" y="60" width="32" height="40" class="fill-kelp"/>
+            <rect x="68" y="75" width="32" height="25" class="fill-kelp"/>
+            <rect x="116" y="55" width="32" height="45" class="fill-kelp"/>
+            <rect x="164" y="20" width="32" height="80" class="fill-kelp"/>
+            <rect x="212" y="68" width="32" height="32" class="fill-red"/>
+            <text x="220" y="15" font-family="JetBrains Mono" font-size="9" fill="currentColor">→ NOW</text>
+          </svg>
+        </div>
+      </div>
+    </a>
+
+    <a class="module" href="#proof">
+      <div class="module-num">02</div>
+      <div class="m-title">Calendar<span class="sub" data-de>· Wer · Was · Wo</span><span class="sub" data-en>· Who · What · Where</span></div>
+      <div class="m-desc">
+        <span data-de>Woche, Monat, Tag — alle Kurse, alle Crew, alle Standorte. Tentative, bestätigt, abgesagt. Doppelbuchungen sind unmöglich. Cancellations bleiben sichtbar, nur durchgestrichen.</span>
+        <span data-en>Week, month, day — all courses, all crew, all locations. Tentative, confirmed, cancelled. Double bookings are impossible. Cancellations stay visible, just struck through.</span>
+      </div>
+      <div class="m-visual">
+        <div class="ill">
+          <svg viewBox="0 0 280 120">
+            <rect x="0" y="0" width="280" height="120"/>
+            <line x1="0" y1="22" x2="280" y2="22"/>
+            <line x1="40" y1="0" x2="40" y2="120"/>
+            <line x1="80" y1="0" x2="80" y2="120"/>
+            <line x1="120" y1="0" x2="120" y2="120"/>
+            <line x1="160" y1="0" x2="160" y2="120"/>
+            <line x1="200" y1="0" x2="200" y2="120"/>
+            <line x1="240" y1="0" x2="240" y2="120"/>
+            <text x="5" y="15" font-family="JetBrains Mono" font-size="8" fill="currentColor">MO TU WE TH FR SA SU</text>
+            <rect x="44" y="35" width="32" height="18" class="fill-kelp" opacity="0.6"/>
+            <rect x="84" y="60" width="32" height="18" class="fill-kelp" opacity="0.6"/>
+            <rect x="124" y="35" width="32" height="40" class="fill-red"/>
+            <rect x="164" y="80" width="32" height="18" class="fill-kelp" opacity="0.6"/>
+            <rect x="204" y="40" width="32" height="50" class="fill-kelp" opacity="0.6"/>
+            <line x1="124" y1="50" x2="156" y2="58" stroke-width="1"/>
+          </svg>
+        </div>
+      </div>
+    </a>
+
+    <a class="module" href="#proof">
+      <div class="module-num">03</div>
+      <div class="m-title">Skill <em>matrix</em><span class="sub" data-de>· 73 Personen × 34 Skills</span><span class="sub" data-en>· 73 people × 34 skills</span></div>
+      <div class="m-desc">
+        <span data-de>Welcher OWSI darf Sidemount unterrichten? Wer kann Nitrox auf Englisch? Wer ist nächstes Wochenende verfügbar und hat Bootserfahrung? Vorher: im Kopf von einer Person. Jetzt: ein Klick.</span>
+        <span data-en>Which OWSI can teach Sidemount? Who can teach Nitrox in English? Who's available next weekend and has boat experience? Before: in one person's head. Now: one click.</span>
+      </div>
+      <div class="m-visual">
+        <div class="ill">
+          <svg viewBox="0 0 280 120">
+            <g>
+              <rect x="0" y="20" width="14" height="14" class="fill-kelp" opacity="0.3"/>
+              <rect x="18" y="20" width="14" height="14" class="fill-kelp" opacity="0.7"/>
+              <rect x="36" y="20" width="14" height="14" class="fill-kelp"/>
+              <rect x="54" y="20" width="14" height="14" class="fill-kelp" opacity="0.5"/>
+              <rect x="72" y="20" width="14" height="14" class="fill-kelp"/>
+              <rect x="90" y="20" width="14" height="14"/>
+              <rect x="108" y="20" width="14" height="14" class="fill-kelp" opacity="0.7"/>
+              <rect x="126" y="20" width="14" height="14" class="fill-kelp"/>
+              <rect x="144" y="20" width="14" height="14"/>
+              <rect x="162" y="20" width="14" height="14" class="fill-kelp" opacity="0.4"/>
+              <rect x="180" y="20" width="14" height="14" class="fill-kelp"/>
+              <rect x="198" y="20" width="14" height="14" class="fill-red" opacity="0.7"/>
+              <rect x="216" y="20" width="14" height="14"/>
+              <rect x="234" y="20" width="14" height="14" class="fill-kelp" opacity="0.6"/>
+              <rect x="252" y="20" width="14" height="14" class="fill-kelp"/>
+            </g>
+            <g transform="translate(0, 22)">
+              <rect x="0" y="20" width="14" height="14" class="fill-kelp" opacity="0.5"/>
+              <rect x="18" y="20" width="14" height="14"/>
+              <rect x="36" y="20" width="14" height="14" class="fill-kelp" opacity="0.7"/>
+              <rect x="54" y="20" width="14" height="14" class="fill-kelp"/>
+              <rect x="72" y="20" width="14" height="14"/>
+              <rect x="90" y="20" width="14" height="14" class="fill-kelp" opacity="0.6"/>
+              <rect x="108" y="20" width="14" height="14"/>
+              <rect x="126" y="20" width="14" height="14" class="fill-kelp"/>
+              <rect x="144" y="20" width="14" height="14" class="fill-kelp" opacity="0.4"/>
+              <rect x="162" y="20" width="14" height="14"/>
+              <rect x="180" y="20" width="14" height="14" class="fill-kelp" opacity="0.8"/>
+              <rect x="198" y="20" width="14" height="14"/>
+              <rect x="216" y="20" width="14" height="14" class="fill-kelp"/>
+              <rect x="234" y="20" width="14" height="14" class="fill-kelp" opacity="0.5"/>
+              <rect x="252" y="20" width="14" height="14" class="fill-kelp"/>
+            </g>
+            <g transform="translate(0, 44)">
+              <rect x="0" y="20" width="14" height="14"/>
+              <rect x="18" y="20" width="14" height="14" class="fill-kelp"/>
+              <rect x="36" y="20" width="14" height="14" class="fill-kelp" opacity="0.6"/>
+              <rect x="54" y="20" width="14" height="14"/>
+              <rect x="72" y="20" width="14" height="14" class="fill-kelp" opacity="0.4"/>
+              <rect x="90" y="20" width="14" height="14" class="fill-kelp"/>
+              <rect x="108" y="20" width="14" height="14"/>
+              <rect x="126" y="20" width="14" height="14" class="fill-kelp" opacity="0.7"/>
+              <rect x="144" y="20" width="14" height="14" class="fill-kelp"/>
+              <rect x="162" y="20" width="14" height="14" class="fill-red" opacity="0.6"/>
+              <rect x="180" y="20" width="14" height="14"/>
+              <rect x="198" y="20" width="14" height="14" class="fill-kelp" opacity="0.5"/>
+              <rect x="216" y="20" width="14" height="14" class="fill-kelp"/>
+              <rect x="234" y="20" width="14" height="14"/>
+              <rect x="252" y="20" width="14" height="14" class="fill-kelp" opacity="0.6"/>
+            </g>
+          </svg>
+        </div>
+      </div>
+    </a>
+
+    <a class="module" href="#proof">
+      <div class="module-num">04</div>
+      <div class="m-title">Pool<span class="sub" data-de>· Vier Pools, sieben Tage, ein Blick</span><span class="sub" data-en>· Four pools, seven days, one glance</span></div>
+      <div class="m-desc">
+        <span data-de>Pool-Slots kosten Geld. Vergessene Reservierungen kosten doppelt. Atoll zeigt jede Woche, was reserviert ist, was offen ist, was zurückgegeben werden sollte.</span>
+        <span data-en>Pool slots cost money. Forgotten reservations cost double. Atoll shows what's reserved, what's open, what should be released — every single week.</span>
+      </div>
+      <div class="m-visual">
+        <div class="ill">
+          <svg viewBox="0 0 280 120">
+            <g>
+              <text x="0" y="12" font-family="JetBrains Mono" font-size="8" fill="currentColor">MÖÖSLI</text>
+              <line x1="50" y1="8" x2="280" y2="8" stroke-dasharray="2 3" opacity="0.5"/>
+              <text x="0" y="36" font-family="JetBrains Mono" font-size="8" fill="currentColor">LANGNAU</text>
+              <rect x="200" y="26" width="35" height="14" class="fill-kelp"/>
+              <text x="0" y="60" font-family="JetBrains Mono" font-size="8" fill="currentColor">KLOTEN</text>
+              <rect x="240" y="50" width="40" height="14" class="fill-red"/>
+              <text x="0" y="84" font-family="JetBrains Mono" font-size="8" fill="currentColor">UITIKON</text>
+              <line x1="50" y1="80" x2="280" y2="80" stroke-dasharray="2 3" opacity="0.5"/>
+              <line x1="60" y1="100" x2="280" y2="100"/>
+              <text x="60" y="115" font-family="JetBrains Mono" font-size="7" fill="currentColor">MO  TU  WE  TH  FR  SA  SU</text>
+            </g>
+          </svg>
+        </div>
+      </div>
+    </a>
+
+    <a class="module" href="#proof">
+      <div class="module-num">05</div>
+      <div class="m-title">Courses<span class="sub" data-de>· Vom Lead bis zur Zertifizierung</span><span class="sub" data-en>· From lead to certification</span></div>
+      <div class="m-desc">
+        <span data-de>136 Kurse pro Jahr, jeder mit Status, Crew, Teilnehmern, Skill-Check, Notizen. Tentative wird bestätigt, bestätigt wird durchgeführt, durchgeführt wird abgehakt. Niemand fällt durchs Raster.</span>
+        <span data-en>136 courses per year, each with status, crew, participants, skill-check, notes. Tentative becomes confirmed, confirmed becomes done, done gets ticked. Nothing falls through the cracks.</span>
+      </div>
+      <div class="m-visual">
+        <div class="ill">
+          <svg viewBox="0 0 280 120">
+            <circle cx="20" cy="60" r="6" class="fill-ink"/>
+            <line x1="26" y1="60" x2="90" y2="60"/>
+            <circle cx="96" cy="60" r="6" class="fill-kelp"/>
+            <line x1="102" y1="60" x2="166" y2="60"/>
+            <circle cx="172" cy="60" r="6" class="fill-kelp"/>
+            <line x1="178" y1="60" x2="242" y2="60"/>
+            <circle cx="248" cy="60" r="8" class="fill-red"/>
+            <text x="10" y="85" font-family="JetBrains Mono" font-size="8" fill="currentColor">LEAD</text>
+            <text x="80" y="85" font-family="JetBrains Mono" font-size="8" fill="currentColor">TENT.</text>
+            <text x="152" y="85" font-family="JetBrains Mono" font-size="8" fill="currentColor">CONF.</text>
+            <text x="225" y="85" font-family="JetBrains Mono" font-size="8" fill="currentColor">CERT ✓</text>
+          </svg>
+        </div>
+      </div>
+    </a>
+
+    <a class="module" href="#proof">
+      <div class="module-num">06</div>
+      <div class="m-title">Pipeline<span class="sub" data-de>· CD Module · IDC, IE, Mentor</span><span class="sub" data-en>· CD Module · IDC, IE, mentor</span></div>
+      <div class="m-desc">
+        <span data-de>Für Course Directors. IDC-Pipeline mit Status pro Kandidat. IE-Termine. Mentor-Tracking. Gebaut von einem CD, weil generische Kurs-Tools die CD-Realität nicht abbilden.</span>
+        <span data-en>For Course Directors. IDC pipeline with status per candidate. IE dates. Mentor tracking. Built by a CD because generic course tools don't reflect CD reality.</span>
+      </div>
+      <div class="m-visual">
+        <div class="ill">
+          <svg viewBox="0 0 280 120">
+            <rect x="0" y="20" width="60" height="20"/>
+            <text x="6" y="33" font-family="JetBrains Mono" font-size="9" fill="currentColor">IDC #1</text>
+            <rect x="0" y="48" width="80" height="20" class="fill-kelp" opacity="0.3"/>
+            <text x="6" y="61" font-family="JetBrains Mono" font-size="9" fill="currentColor">IDC #2</text>
+            <rect x="0" y="76" width="140" height="20" class="fill-kelp" opacity="0.6"/>
+            <text x="6" y="89" font-family="JetBrains Mono" font-size="9" fill="currentColor">IDC #3</text>
+            <rect x="0" y="104" width="220" height="14" class="fill-red"/>
+            <text x="6" y="115" font-family="JetBrains Mono" font-size="9" fill="white">IE READY →</text>
+            <line x1="60" y1="0" x2="60" y2="120" stroke-dasharray="2 4" opacity="0.3"/>
+            <line x1="140" y1="0" x2="140" y2="120" stroke-dasharray="2 4" opacity="0.3"/>
+            <line x1="220" y1="0" x2="220" y2="120" stroke-dasharray="2 4" opacity="0.3"/>
+          </svg>
+        </div>
+      </div>
+    </a>
+
+  </div>
+</section>
+
+<!-- ===== PROOF / Live tour ===== -->
+<section class="proof" id="proof">
+  <div class="proof-inner">
+    <div class="proof-head">
+      <h2 data-de>Genug Marketing-Sprech. <em>Hier ist Atoll.</em></h2>
+      <h2 data-en>Enough marketing-speak. <em>Here's Atoll.</em></h2>
+      <div class="proof-tabs">
+        <button class="proof-tab active" data-tab="cockpit">Cockpit</button>
+        <button class="proof-tab" data-tab="calendar"><span data-de>Kalender</span><span data-en>Calendar</span></button>
+        <button class="proof-tab" data-tab="courses"><span data-de>Kurse</span><span data-en>Courses</span></button>
+        <button class="proof-tab" data-tab="skills"><span data-de>Skill-Matrix</span><span data-en>Skill Matrix</span></button>
+        <button class="proof-tab" data-tab="pool">Pool</button>
+      </div>
+    </div>
+
+    <div class="proof-frame">
+      <img class="active" data-key="cockpit" src="screens/cockpit.png" alt="Cockpit">
+      <img data-key="calendar" src="screens/calendar.png" alt="Calendar">
+      <img data-key="courses" src="screens/courses.png" alt="Courses">
+      <img data-key="skills" src="screens/skills.png" alt="Skill matrix">
+      <img data-key="pool" src="screens/pool.png" alt="Pool">
+    </div>
+
+    <div class="proof-notes" id="proofNotes">
+      <!-- Notes filled in by JS per tab -->
+    </div>
+  </div>
+</section>
+
+<!-- ===== COMPARE: before / after ===== -->
+<section class="compare">
+  <div class="compare-inner">
+    <h2 data-de>Die letzten 10 Jahre vs. die nächsten 10.</h2>
+    <h2 data-en>The last 10 years vs. the next 10.</h2>
+    <div class="sub" data-de>Was sich konkret ändert, am Tag eins.</div>
+    <div class="sub" data-en>What actually changes on day one.</div>
+
+    <div class="compare-table">
+      <div class="compare-col before">
+        <h3 data-de>Wie es heute läuft</h3><h3 data-en>How it runs today</h3>
+        <ul>
+          <li data-de>Sonntagabend: Excel-Sheet "Kurse 2026 NEU NEU final" aktualisieren</li>
+          <li data-en>Sunday night: update the "Courses 2026 NEW NEW final" spreadsheet</li>
+          <li data-de>WhatsApp-Gruppe "TL-Crew Mai" durchscrollen, wer kann am Samstag</li>
+          <li data-en>Scroll the "TL-Crew May" WhatsApp group to see who's free Saturday</li>
+          <li data-de>Wer kann Sidemount unterrichten? Karin fragen. Karin ist im Urlaub.</li>
+          <li data-en>Who can teach Sidemount? Ask Karin. Karin's on vacation.</li>
+          <li data-de>Pool Langnau für Samstag reserviert? Doodle aufrufen, dann zur Site, dann anrufen</li>
+          <li data-en>Pool Langnau reserved for Saturday? Open Doodle, then their site, then call</li>
+          <li data-de>Year-End: 3 Tage Saldi aufräumen pro Quartal</li>
+          <li data-en>Year-end: 3 days of balance reconciliation per quarter</li>
+          <li data-de>Neuer Schüler: 4 Tools öffnen, in 3 Stellen Daten eintragen</li>
+          <li data-en>New student: open 4 tools, enter data in 3 places</li>
+        </ul>
+      </div>
+      <div class="compare-col after">
+        <h3 data-de>Mit Atoll, ab Tag eins</h3><h3 data-en>With Atoll, from day one</h3>
+        <ul>
+          <li data-de>Sonntagabend: <em>gibt's nicht mehr.</em> Cockpit zeigt's am Montag im Browser.</li>
+          <li data-en>Sunday night: <em>doesn't exist anymore.</em> Cockpit shows it Monday morning.</li>
+          <li data-de>TL-Verfügbarkeit für KW21 ist ein <em>Klick</em>. Skill-Matrix filtert wer kann.</li>
+          <li data-en>TL availability for week 21 is <em>one click</em>. Skill matrix filters who's qualified.</li>
+          <li data-de>Sidemount Instructor? <em>Drei Personen, eine davon nächste Woche verfügbar.</em></li>
+          <li data-en>Sidemount Instructor? <em>Three people, one available next week.</em></li>
+          <li data-de>Pool-Status: <em>Reserviert · OWD GK05 · Brügger</em>. Im Pool-Tab. Immer.</li>
+          <li data-en>Pool status: <em>Reserved · OWD GK05 · Brügger</em>. In the Pool tab. Always.</li>
+          <li data-de>Saldi sind <em>live</em>. Year-End ist ein Knopf, nicht ein Wochenende.</li>
+          <li data-en>Balances are <em>live</em>. Year-end is a button, not a weekend.</li>
+          <li data-de>Neuer Schüler: <em>ein</em> Formular. Erscheint überall, wo er hingehört.</li>
+          <li data-en>New student: <em>one</em> form. Shows up everywhere they belong.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== STORY ===== -->
+<section class="story" id="story">
+  <div class="story-inner">
+    <div class="story-portrait">
+      <div class="credit">
+        <div class="name">Dominik Weckherlin</div>
+        <div class="role">PADI Course Director</div>
+      </div>
+    </div>
+    <div class="story-content">
+      <span class="stamp red"><span data-de>Die Story</span><span data-en>The story</span></span>
+      <h2 style="margin-top: 20px;" data-de>Atoll kommt nicht aus dem Tech-Bubble. Es kommt vom <em>Beckenrand</em>.</h2>
+      <h2 style="margin-top: 20px;" data-en>Atoll didn't come from the tech bubble. It came from <em>poolside</em>.</h2>
+
+      <p data-de>Ich tauche seit 40 Jahren. PADI Pro seit 35. Course Director seit 2026. Zwei Jahre bei SeaBees auf Phuket. Lange Jahre im Tauchlädeli in Kilchberg. Heute bin ich Course Director für TSK in Zürich und SeaExplorers auf den Philippinen — und das bleibt auch so.</p>
+      <p data-en>I've been diving for 40 years. PADI Pro for 35. Course Director since 2026. Two years at SeaBees in Phuket. Long years at Tauchlädeli in Kilchberg. Today I'm Course Director for TSK in Zürich and SeaExplorers in the Philippines — and that's how it'll stay.</p>
+
+      <p data-de>Jede Schule, in der ich war, lief auf demselben Stapel: Excel, Doodle, WhatsApp, Klemmbrett, und genau eine Person, die alles im Kopf hat. Ich habe Atoll gebaut, weil ich das Werkzeug haben wollte, das uns überall gefehlt hat.</p>
+      <p data-en>Every shop I worked in ran on the same stack: Excel, Doodle, WhatsApp, a clipboard, and exactly one person who keeps it all in their head. I built Atoll because I wanted the tool we'd been missing the whole time.</p>
+
+      <div class="story-credentials">
+        <div class="story-cred">
+          <div class="l" data-de>Jahre tauchend</div><div class="l" data-en>Years diving</div>
+          <div class="v">40</div>
+        </div>
+        <div class="story-cred">
+          <div class="l" data-de>Jahre PADI Pro</div><div class="l" data-en>Years PADI Pro</div>
+          <div class="v">35</div>
+        </div>
+        <div class="story-cred">
+          <div class="l" data-de>Course Director seit</div><div class="l" data-en>Course Director since</div>
+          <div class="v">2026</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== TESTIMONIAL ===== -->
+<section class="testimonial">
+  <div class="testimonial-inner">
+    <div class="testimonial-mark">"</div>
+    <blockquote data-de>
+      Wir haben in 14 Tagen aufgehört, Excel zu öffnen. Niemand hat danach gefragt. <span class="marker">Das sagt eigentlich alles.</span>
+    </blockquote>
+    <blockquote data-en>
+      We stopped opening Excel after 14 days. Nobody asked about it. <span class="marker">That kind of says it all.</span>
+    </blockquote>
+    <div class="testimonial-cite">
+      <strong>Urs Schlatter</strong> · <span data-de>Divemaster, TSK Zürich</span><span data-en>Divemaster, TSK Zürich</span>
+    </div>
+  </div>
+</section>
+
+<!-- ===== PRICING ===== -->
+<section class="pricing-sec" id="pricing">
+  <div class="pricing-inner">
+    <div class="pricing-head">
+      <h2 data-de>Ein Preis. Eine Schule. <em>Alles drin.</em></h2>
+      <h2 data-en>One price. One shop. <em>All in.</em></h2>
+      <div class="sub" data-de>Keine Pro-User-Falle. Keine Module zum Dazukaufen. Keine Setup-Gebühr.</div>
+      <div class="sub" data-en>No per-user trap. No add-on modules. No setup fees.</div>
+    </div>
+
+    <div class="ticket">
+      <div class="ticket-main">
+        <div class="ticket-label" data-de>Atoll · Single-Shop Lizenz</div>
+        <div class="ticket-label" data-en>Atoll · Single-shop license</div>
+        <div class="ticket-title">Dive Shop <em data-de>· Vollzugang</em><em data-en>· Full access</em></div>
+        <div class="ticket-tag" data-de>Für PADI-Tauchschulen jeder Grösse.</div>
+        <div class="ticket-tag" data-en>For PADI dive shops of any size.</div>
+
+        <ul class="ticket-list">
+          <li><span data-de>Alle 11 Module · alle Updates</span><span data-en>All 11 modules · all updates</span></li>
+          <li><span data-de>Unbegrenzte Crew & Schüler:innen</span><span data-en>Unlimited crew & students</span></li>
+          <li><span data-de>Datenmigration aus Excel — inklusive</span><span data-en>Data migration from Excel — included</span></li>
+          <li><span data-de>Onboarding-Session für dein ganzes Team</span><span data-en>Onboarding session for your whole team</span></li>
+          <li><span data-de>Support direkt vom CD, der's gebaut hat</span><span data-en>Support direct from the CD who built it</span></li>
+          <li><span data-de>Monatlich kündbar. Kein Knebelvertrag.</span><span data-en>Cancel monthly. No lock-in.</span></li>
+        </ul>
+      </div>
+      <div class="ticket-stub">
+        <div class="small">CHF</div>
+        <div class="amount">249</div>
+        <div class="per" data-de>/ Monat</div><div class="per" data-en>/ month</div>
+        <a href="#demo" class="btn">
+          <span data-de>Demo →</span><span data-en>Book →</span>
+        </a>
+        <div class="stub-id">N° 00<span id="stubId">73</span></div>
+      </div>
+    </div>
+    <div class="pricing-fine" data-de>30 Tage kostenlos. Keine Kreditkarte. Wenn's nicht passt, gehst du wieder.</div>
+    <div class="pricing-fine" data-en>30 days free. No credit card. If it doesn't fit, you walk.</div>
+  </div>
+</section>
+
+<!-- ===== FAQ ===== -->
+<section class="faq" id="faq">
+  <div class="faq-inner">
+    <h2 data-de>Was du wahrscheinlich fragen willst.</h2>
+    <h2 data-en>What you're probably about to ask.</h2>
+    <div class="faq-list">
+      <details>
+        <summary>
+          <span data-de>Was passiert mit unseren Excel-Daten?</span>
+          <span data-en>What happens to our Excel data?</span>
+        </summary>
+        <div class="answer" data-de>Wir importieren sie. Du schickst uns deine aktuelle Datei, wir mappen die Spalten, du bekommst sie zurück — als sauberes Atoll-Setup mit allen Adressen, Kursen und Saldi. Inklusive im Preis. Dauert typisch 2–5 Tage.</div>
+        <div class="answer" data-en>We import them. You send us your current file, we map the columns, you get it back as a clean Atoll setup with all addresses, courses and balances. Included in the price. Usually 2–5 days.</div>
+      </details>
+      <details>
+        <summary>
+          <span data-de>Brauchen wir IT-Support, um Atoll zu nutzen?</span>
+          <span data-en>Do we need IT support to use Atoll?</span>
+        </summary>
+        <div class="answer" data-de>Nein. Atoll läuft im Browser, das war's. Keine Installation, kein Update, keine Server. Wenn du WhatsApp Web bedienen kannst, kannst du Atoll bedienen.</div>
+        <div class="answer" data-en>No. Atoll runs in the browser, that's it. No installation, no updates, no servers. If you can use WhatsApp Web, you can use Atoll.</div>
+      </details>
+      <details>
+        <summary>
+          <span data-de>Wir sind eine kleine Schule. Lohnt sich das?</span>
+          <span data-en>We're a small shop. Is it worth it?</span>
+        </summary>
+        <div class="answer" data-de>Wenn du unter 50 Kursen pro Jahr bist und alleine arbeitest — ehrlich gesagt: vielleicht nicht. Ab ca. 80 Kursen pro Jahr oder einem Team von 5+ Crew zahlt es sich konkret aus. Frag uns einfach in der Demo, wir sagen dir, ob's für deine Situation Sinn macht.</div>
+        <div class="answer" data-en>If you're under 50 courses a year and working solo — honestly, maybe not. From around 80 courses a year or a team of 5+ crew it pays off concretely. Just ask us in the demo, we'll tell you if it makes sense for your situation.</div>
+      </details>
+      <details>
+        <summary>
+          <span data-de>Was, wenn wir nach 3 Monaten merken, dass es nicht passt?</span>
+          <span data-en>What if we realise after 3 months it's not for us?</span>
+        </summary>
+        <div class="answer" data-de>Du kündigst. Bekommst alle deine Daten als Export (CSV/Excel) zurück. Fertig. Wir versuchen nicht, dich zu halten. Aber das ist bisher noch keiner Schule passiert, die ATOLL ernsthaft eingeführt hat.</div>
+        <div class="answer" data-en>You cancel. You get all your data back as exports (CSV/Excel). Done. We don't try to keep you. But it hasn't happened yet with any shop that seriously rolled out Atoll.</div>
+      </details>
+      <details>
+        <summary>
+          <span data-de>Wo werden unsere Daten gespeichert?</span>
+          <span data-en>Where is our data stored?</span>
+        </summary>
+        <div class="answer" data-de>EU-Server, DSGVO-konform. Backups täglich. Verschlüsselt at-rest und in-transit. Wir sind ein Schweizer Unternehmen, das selbst Tauchschulen-Daten verwaltet — wir nehmen das ernst.</div>
+        <div class="answer" data-en>EU servers, GDPR-compliant. Daily backups. Encrypted at rest and in transit. We're a Swiss company that manages dive shop data ourselves — we take it seriously.</div>
+      </details>
+      <details>
+        <summary>
+          <span data-de>Kann meine Crew das auf dem Handy nutzen?</span>
+          <span data-en>Can my crew use it on mobile?</span>
+        </summary>
+        <div class="answer" data-de>Ja. Atoll funktioniert auf Phone, Tablet und Desktop. Crew nutzt es typisch am Phone — Verfügbarkeit eintragen, Skill-Check abhaken, Schüler-Info nachschauen. Verwaltung läuft eher am Laptop.</div>
+        <div class="answer" data-en>Yes. Atoll works on phone, tablet and desktop. Crew typically uses it on phone — entering availability, ticking skill checks, looking up student info. Admin work happens on laptop.</div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- ===== DEMO ===== -->
+<section class="demo" id="demo">
+  <div class="demo-inner">
+    <div>
+      <span class="stamp" style="color: var(--paper); border-color: var(--paper);"><span data-de>06 · Demo buchen</span><span data-en>06 · Book the demo</span></span>
+      <h2 style="margin-top: 30px;" data-de>30 Minuten. <em>Mit deinen Daten.</em></h2>
+      <h2 style="margin-top: 30px;" data-en>30 minutes. <em>With your data.</em></h2>
+      <p class="lead" data-de>Schick uns vorher dein Excel-Sheet (oder einen Auszug). Wir laden es in eine Demo-Instanz. Du siehst Atoll am Call mit <em>deinen</em> Schülern, <em>deiner</em> Crew, <em>deinen</em> Kursen. Konkret. Vom ersten Klick an.</p>
+      <p class="lead" data-en>Send us your Excel sheet beforehand (or an extract). We load it into a demo instance. On the call, you see Atoll with <em>your</em> students, <em>your</em> crew, <em>your</em> courses. Concrete. From the first click.</p>
+
+      <div class="demo-extras">
+        <div class="row">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M4 4h16v16H4zM4 8l8 6 8-6"/></svg>
+          <a href="mailto:hello@atoll-os.com">hello@atoll-os.com</a>
+        </div>
+        <div class="row">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+          <span>+41 79 877 80 80</span>
+        </div>
+        <div class="row">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          <span data-de>Antwort innert 24 Stunden. Nicht von einem Bot.</span>
+          <span data-en>Reply within 24 hours. Not from a bot.</span>
+        </div>
+      </div>
+    </div>
+
+    <form class="form" id="demoForm">
+      <label class="form-label">Name</label>
+      <input type="text" required placeholder="Dominik Weckherlin" name="name">
+      <label class="form-label" data-de>Tauchschule</label><label class="form-label" data-en>Dive shop</label>
+      <input type="text" required placeholder="TSK Zürich" name="shop">
+      <label class="form-label">Email</label>
+      <input type="email" required placeholder="you@diveshop.com" name="email">
+      <label class="form-label" data-de>Kurse pro Jahr (etwa)</label><label class="form-label" data-en>Courses per year (rough)</label>
+      <select name="size" data-translatable>
+        <option value="s" data-de="< 50" data-en="< 50">&lt; 50</option>
+        <option value="m" data-de="50 – 100" data-en="50 – 100">50 – 100</option>
+        <option value="l" data-de="100 – 200" data-en="100 – 200">100 – 200</option>
+        <option value="xl" data-de="200+" data-en="200+">200+</option>
+        <option value="cd" data-de="Ich bin Course Director" data-en="I'm a Course Director">Ich bin Course Director</option>
+      </select>
+      <label class="form-label" data-de>Was nervt dich gerade am meisten?</label><label class="form-label" data-en>What's annoying you most right now?</label>
+      <textarea rows="2" name="message" placeholder="..."></textarea>
+      <button type="submit" class="btn">
+        <span data-de>Demo anfragen →</span><span data-en>Request demo →</span>
+      </button>
+      <div class="form-fine" data-de>Kein Newsletter. Keine Drittparteien. Versprochen.</div>
+      <div class="form-fine" data-en>No newsletter. No third parties. Promise.</div>
+    </form>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <div class="footer-inner">
+    <div>
+      <strong>ATOLL</strong> · <span data-de>Das Scuba-Betriebssystem</span><span data-en>The Scuba OS</span><br>
+      <span style="opacity: 0.7;">© 2026 · <span data-de>Gemacht in Zürich</span><span data-en>Made in Zürich</span></span>
+    </div>
+    <div class="footer-links">
+      <a href="#"><span data-de>Datenschutz</span><span data-en>Privacy</span></a>
+      <a href="#"><span data-de>AGB</span><span data-en>Terms</span></a>
+      <a href="#">Impressum</a>
+      <a href="mailto:hello@atoll-os.com">Contact</a>
+    </div>
+  </div>
+  <div class="footer-end">
+    <span>Field manual № 01 · v2026.05</span>
+    <span data-de>← scroll back up</span><span data-en>← scroll back up</span>
+  </div>
+</footer>
+
+<script>
+  // ===== Lang =====
+  const langBtns = document.querySelectorAll('[data-lang-set]');
+  function setLang(lang) {
+    document.documentElement.lang = lang;
+    langBtns.forEach(b => b.classList.toggle('active', b.dataset.langSet === lang));
+    document.querySelectorAll('select[data-translatable] option').forEach(o => {
+      const t = o.dataset[lang];
+      if (t) o.textContent = t;
+    });
+    try { localStorage.setItem('atoll-lang', lang); } catch(e) {}
+  }
+  langBtns.forEach(b => b.addEventListener('click', () => setLang(b.dataset.langSet)));
+  try {
+    const s = localStorage.getItem('atoll-lang');
+    if (s === 'en' || s === 'de') setLang(s);
+  } catch(e) {}
+
+  // ===== Proof tabs =====
+  const tabs = document.querySelectorAll('.proof-tab');
+  const imgs = document.querySelectorAll('.proof-frame img');
+  const notesEl = document.getElementById('proofNotes');
+
+  const noteContent = {
+    cockpit: [
+      { arrow: { de: 'Jetzt', en: 'Now' }, h4: { de: 'Tatsächlicher Monat', en: 'Month-to-date' }, body: { de: 'CHF 1\'389 im Mai 26 — live, ohne Export, ohne Mauschelei. Vergleichswerte aus den Vormonaten.', en: 'CHF 1,389 in May 26 — live, no export, no fudging. Comparison with previous months.' } },
+      { arrow: { de: 'Wer', en: 'Who' }, h4: { de: 'Top 10 TL/DM', en: 'Top 10 TL/DM' }, body: { de: 'Wer hat dieses Quartal am meisten geleistet? Steht da. Keine Diskussion nötig.', en: 'Who delivered most this quarter? It\'s right there. No discussion needed.' } },
+      { arrow: { de: 'Was', en: 'What' }, h4: { de: '4 Kennzahlen reichen', en: '4 numbers, that\'s it' }, body: { de: 'Kein Dashboard-Theater. Cockpit zeigt nur, was Tauchschulen-Inhaber am Montagmorgen wissen müssen.', en: 'No dashboard theatrics. Cockpit only shows what dive shop owners need to know on a Monday morning.' } }
+    ],
+    calendar: [
+      { arrow: { de: 'Wann', en: 'When' }, h4: { de: 'Live in dieser Woche', en: 'Live this week' }, body: { de: '11 Kurse parallel. Crew zugewiesen, Tag im Kursverlauf sichtbar, Cancellations grau durchgestrichen.', en: '11 courses running. Crew assigned, course day visible, cancellations greyed out.' } },
+      { arrow: { de: 'Wer', en: 'Who' }, h4: { de: 'Lead Instructor klar', en: 'Lead instructor clear' }, body: { de: 'Jeder Kurs hat eine farbcodierte Crew. Tentative ist orange, bestätigt blau, kein Lead = rot.', en: 'Every course has color-coded crew. Tentative is orange, confirmed blue, no lead = red.' } },
+      { arrow: { de: 'Wechsel', en: 'Switch' }, h4: { de: 'Monat ↔ Woche ↔ Tag', en: 'Month ↔ week ↔ day' }, body: { de: 'Ein Klick. Druckansicht für Crew-Briefings. Auf Phone genauso lesbar wie auf Desktop.', en: 'One click. Print view for crew briefings. As readable on phone as on desktop.' } }
+    ],
+    courses: [
+      { arrow: { de: 'Status', en: 'Status' }, h4: { de: 'Aktive vs. tentative', en: 'Active vs. tentative' }, body: { de: '52 aktive, 41 bestätigte, 11 tentative. Jeder hat einen Owner und einen Status. Niemand fällt durchs Raster.', en: '52 active, 41 confirmed, 11 tentative. Each has an owner and a status. Nothing falls through.' } },
+      { arrow: { de: 'Crew', en: 'Crew' }, h4: { de: 'TL/DM-Zuweisung', en: 'TL/DM assignment' }, body: { de: 'Pro Kurs sieht man sofort: Lead, Assists, freie Slots, Tage geplant. Mit Skill-Check pro Tag.', en: 'Per course you see: lead, assists, open slots, days planned. With skill-check per day.' } },
+      { arrow: { de: 'Notes', en: 'Notes' }, h4: { de: 'Wo der Truck hin muss', en: 'Where the truck goes' }, body: { de: 'Course notes erscheinen bei der Crew am Tag selbst. Schluss mit WhatsApp-Suche nach "Wo treffen wir uns?"', en: 'Course notes appear for crew on the day itself. End of WhatsApp searches for "where do we meet?"' } }
+    ],
+    skills: [
+      { arrow: { de: 'Vollbild', en: 'Full picture' }, h4: { de: '73 × 34', en: '73 × 34' }, body: { de: 'Jede Person, jede Qualifikation, in einem Bild. Wer kann was — endlich nicht mehr Karins Privatwissen.', en: 'Every person, every qualification, in one image. Who can do what — finally not just in Karin\'s head.' } },
+      { arrow: { de: 'Filter', en: 'Filter' }, h4: { de: 'Auf Klick', en: 'On click' }, body: { de: 'Klick auf "Sidemount Instructor" — du siehst sofort die Leute, die unterrichten dürfen. Plus Verfügbarkeit, plus Sprachen.', en: 'Click on "Sidemount Instructor" — you instantly see who can teach it. Plus availability, plus languages.' } },
+      { arrow: { de: 'Lücken', en: 'Gaps' }, h4: { de: 'Wo fehlt was', en: 'Where you\'re thin' }, body: { de: 'Spaltenansicht zeigt: bei welchem Skill bist du dünn besetzt? Eine Person fällt aus — wer kann einspringen? Auf einen Blick.', en: 'Column view shows: where are you thin on a skill? One person drops out — who can cover? At a glance.' } }
+    ],
+    pool: [
+      { arrow: { de: 'Vier Pools', en: 'Four pools' }, h4: { de: 'Möösli · Langnau · Kloten · Uitikon', en: 'Möösli · Langnau · Kloten · Uitikon' }, body: { de: 'Alle Standorte, alle Tage, eine Ansicht. Reservierungen mit Kursnummer und Lead.', en: 'All locations, all days, one view. Reservations with course number and lead.' } },
+      { arrow: { de: 'Status', en: 'Status' }, h4: { de: 'Reserviert vs. offen', en: 'Reserved vs. open' }, body: { de: 'Pool reserved zeigt türkis, noch offen zeigt orange, vergangen ist grau. Drei Farben — keine Zweifel.', en: 'Reserved = teal, still open = orange, past = grey. Three colors — no doubts.' } },
+      { arrow: { de: 'Ergebnis', en: 'Result' }, h4: { de: 'Keine leeren Becken', en: 'No more empty basins' }, body: { de: 'Nutzungsrate steigt typisch von 65% auf >90% nach 3 Monaten. Real gerechnet bei TSK.', en: 'Utilization typically goes from 65% to >90% in 3 months. Real numbers from TSK.' } }
+    ]
+  };
+
+  function renderNotes(key) {
+    const lang = document.documentElement.lang === 'en' ? 'en' : 'de';
+    const arr = noteContent[key] || [];
+    notesEl.innerHTML = arr.map(n => `
+      <div class="proof-note">
+        <div class="arrow">→ ${n.arrow[lang]}</div>
+        <h4>${n.h4[lang]}</h4>
+        <p>${n.body[lang]}</p>
+      </div>
+    `).join('');
+  }
+  renderNotes('cockpit');
+
+  tabs.forEach(t => t.addEventListener('click', () => {
+    tabs.forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    const k = t.dataset.tab;
+    imgs.forEach(img => img.classList.toggle('active', img.dataset.key === k));
+    renderNotes(k);
+  }));
+
+  // Re-render notes when lang changes
+  const origSetLang = setLang;
+  langBtns.forEach(b => b.addEventListener('click', () => {
+    const active = document.querySelector('.proof-tab.active');
+    if (active) renderNotes(active.dataset.tab);
+  }));
+
+  // ===== Form =====
+  document.getElementById('demoForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const btn = e.target.querySelector('button');
+    const lang = document.documentElement.lang;
+    btn.textContent = lang === 'en' ? 'Sent → check your inbox' : 'Gesendet → check deinen Posteingang';
+    btn.style.background = 'var(--kelp)';
+    btn.style.borderColor = 'var(--kelp)';
+  });
+
+  // ===== Reveal =====
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(en => {
+      if (en.isIntersecting) {
+        en.target.classList.add('in');
+        io.unobserve(en.target);
+      }
+    });
+  }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+  document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+  // ===== Random stub number for personality =====
+  document.getElementById('stubId').textContent = String(Math.floor(60 + Math.random() * 40));
+</script>
+
+</body>
+</html>
